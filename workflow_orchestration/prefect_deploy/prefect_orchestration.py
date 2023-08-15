@@ -15,6 +15,7 @@ import mlflow
 import xgboost as xgb
 from prefect import flow, task
 
+@task(retries=3, retry_delay_seconds=2)
 def read_data(filename: str,categorical_features: List[str], numerical_features: List[str]) -> (pd.DataFrame,pd.Series):
     """Read data into DataFrame"""
     df = pd.read_parquet(filename)
@@ -42,7 +43,7 @@ def read_data(filename: str,categorical_features: List[str], numerical_features:
     return df[categorical_features + numerical_features],df[target]
 
 
-
+@task
 def build_model(
     df_train: pd.DataFrame, y_train:pd.Series, df_val: pd.DataFrame, y_val:pd.Series
 ) -> tuple(
@@ -66,7 +67,7 @@ def build_model(
     y_val = y_val.values
     return X_train, X_val, y_train, y_val, dv
 
-
+@task(log_prints=True)
 def train_best_model(
     X_train: scipy.sparse._csr.csr_matrix,
     X_val: scipy.sparse._csr.csr_matrix,
@@ -112,7 +113,7 @@ def train_best_model(
         mlflow.xgboost.log_model(booster, artifact_path="models_mlflow")
     return None
 
-
+@flow
 def main_flow(
     train_path: str = "./data/chicago_taxi_train_dataset_2023-01.parquet",
     val_path: str = "./data/chicago_taxi_Val_dataset_2023-02.parquet",
