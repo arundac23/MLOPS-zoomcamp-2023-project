@@ -1,3 +1,0 @@
-{
-  "main-flow": "prefect_deploy/prefect_orchestration.py:main_flow"
-}
