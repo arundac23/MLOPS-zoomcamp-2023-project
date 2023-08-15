@@ -1,3 +1,0 @@
-{
-  "main-flow": "check/prefect_orchestration.py:main_flow"
-}
