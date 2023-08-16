@@ -17,7 +17,7 @@ from prefect import flow, task
 
 @task(retries=3, retry_delay_seconds=2)
 def read_data(filename: str,categorical_features: List[str], numerical_features: List[str]) -> (pd.DataFrame,pd.Series):
-    """Read data into DataFrame"""
+    
     df = pd.read_parquet(filename)
 
     df = df[df.trip_seconds.notnull()]
@@ -75,7 +75,7 @@ def train_best_model(
     y_val: np.ndarray,
     dv: sklearn.feature_extraction.DictVectorizer,
 ) -> None:
-    """train a model with best hyperparams and write everything out"""
+    
 
     with mlflow.start_run():
         train = xgb.DMatrix(X_train, label=y_train)
@@ -111,6 +111,25 @@ def train_best_model(
         mlflow.log_artifact("models/preprocessor.b", artifact_path="preprocessor")
 
         mlflow.xgboost.log_model(booster, artifact_path="models_mlflow")
+    
+
+        markdown__rmse_report = f"""# RMSE Report
+
+## Summary
+
+Duration Prediction 
+
+## RMSE XGBoost Model
+
+| Region    | RMSE |
+|:----------|-------:|
+| {date.today()} | {rmse:.2f} |
+"""
+
+        create_markdown_artifact(
+            key="duration-model-report", markdown=markdown__rmse_report
+        )
+
     return None
 
 @flow
