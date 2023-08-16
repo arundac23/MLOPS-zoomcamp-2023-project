@@ -115,8 +115,8 @@ def train_best_model(
 
 @flow
 def main_flow(
-    train_path: str = "./data/chicago_taxi_train_dataset_2023-01.parquet",
-    val_path: str = "./data/chicago_taxi_Val_dataset_2023-02.parquet",
+    train_path: str = "./workflow_orchestration/data/chicago_taxi_train_dataset_2023-01.parquet",
+    val_path: str = ".workflow_orchestration/data/chicago_taxi_Val_dataset_2023-02.parquet",
 ) -> None:
     """The main training pipeline"""
 

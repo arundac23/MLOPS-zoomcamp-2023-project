@@ -1,0 +1,3 @@
+{
+  "main-flow": "workflow_orchestration/prefect_orchestration.py:main_flow"
+}
