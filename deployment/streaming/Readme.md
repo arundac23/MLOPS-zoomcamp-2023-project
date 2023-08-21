@@ -58,7 +58,7 @@ python test.py
 
 ### Docker 
 
-docker build -t stream-model-chicago-taxi-duration:v1 .
+docker build -t stream-model-chicago-taxi-duration:v2 .
 
 docker run -it --rm \
     -p 8080:8080 \
@@ -68,6 +68,20 @@ docker run -it --rm \
     -e AWS_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" \
     -e AWS_DEFAULT_REGION="us-east-2" \
     stream-model-chicago-taxi-duration:v1
+
+RUN_ID = 'a6203da436864c7ea7d2ce768f2ec697
+
+docker build -t stream-model-chicago-taxi-duration:v2 .
+
+docker run -it --rm \
+    -p 8080:8080 \
+    -e PREDICTIONS_STREAM_NAME="chicago-ride-predictions" \
+    -e RUN_ID="a6203da436864c7ea7d2ce768f2ec697" \
+    -e TEST_RUN="True" \
+    -e AWS_ACCESS_KEY_ID="AKIAIOSFODNN7EXAMPLE" \
+    -e AWS_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" \
+    -e AWS_DEFAULT_REGION="us-east-2" \
+    stream-model-chicago-taxi-duration:v2
 
 ### url for testing the docker
 * http://localhost:8080/2015-03-31/functions/function/invocations
