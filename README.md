@@ -129,3 +129,64 @@ Before running the prefect deployment, make sure all the files are pushed in rem
 Open the Prefect UI and find the flows. Click quick run.
 
 You can see generated data in the terminal while running the flow. You can schedule this flow with different interval in prefect UI.
+
+## 5. Model Deployment:
+### Web-Service Deployment:
+I just deployed the web service model locally. I didn't deploy it in AWS server. Since I used AWS cloud for streaming deployment.
+`predict.py` python model was created for the deployment.
+
+Mlflow production model is saved in S3 bucket. It can be retrieved directly based on its run id.
+
+```bash
+RUN_ID = 'a6203da436864c7ea7d2ce768f2ec697'
+logged_model = f's3://mlflow-artifact-remote-chicago-taxi-prediction/1/{RUN_ID}/artifacts/models'
+model = mlflow.pyfunc.load_model(logged_model)
+   ```
+
+#### Feature engineering and prediction function
+```bash
+def prepare_features(ride):
+    features = {}
+    features['pickup_community_area'] = ride['pickup_community_area'],
+    features['dropoff_community_area'] = ride['dropoff_community_area']
+    return features
+
+
+def predict(features):
+    preds = model.predict(features)
+    return float(preds[0])
+   ```
+#### Flask API and connecting port
+```bash
+app = Flask('chicago-taxi-duration-prediction')
+
+
+@app.route('/predict', methods=['POST'])
+def predict_endpoint():
+    ride = request.get_json()
+
+    features = prepare_features(ride)
+    pred = predict(features)
+
+    result = {
+        'duration': pred,
+        'model_version': RUN_ID
+    }
+
+    return jsonify(result)
+
+
+if __name__ == "__main__":
+    app.run(debug=True, host='0.0.0.0', port=9696)
+   ```
+
+Create pipenv env with required packages
+
+Run `python predict.py`
+
+Run `python test.py` in a separate terminal to see the prediction.
+
+### Streaming Deployment:
+Deployment in a streaming context involves the real-time distribution and execution of applications or models. It is particularly relevant in scenarios where data arrives continuously and needs to be processed in a timely manner.In the realm of machine learning, stream deployment could refer to deploying machine learning models that make predictions on incoming data streams in real-time
+
+In this project, we will use kinesis to handle streaming data and lambda to process and transform the data.
