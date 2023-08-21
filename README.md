@@ -60,16 +60,16 @@ This is cloud storage for ML flow models and artifacts.
 
 ## 3. MLFLOW EXPERIMENT TRACKING AND MODEL REGISTRY:
 The `experiment_tracking` Folder contains two jupyter files `notebook_mlflow_local.ipynb` and `notebook_AWS_cloud.ipynb`. 
-One is tracked and saved the model locally and another tracked in AWS server and saved in S3 bucket.
+One is tracked and saved the model locally and another is tracked in the AWS server and saved in the S3 bucket.
 
 #### For local tracking:
-Create conda environment and install required libraries.
+Create a conda environment and install the required libraries.
 
 tracking uri is sqlite:///mlflow.db. 
 
-Run the mlflow UI .
+Run the mlflow UI.
  ```bash
-   mlflow ui --backend-store-uri sqlite:///mlflow.db
+   mlflow ui --backend-store-URI sqlite:///mlflow.db
    ```
 open local host port.
  ```bash
@@ -78,16 +78,54 @@ open local host port.
 Then run the `notebook_mlflow_local.ipynb` in a separate terminal or through VS code with a remote connection.
 All the experiments logs, artifacts, and models will tracked and saved in the database.
 
-Through ML flow client model was registered and moved to staging or production.
+Through ML flow client model was registered and moved to stage or production.
 #### AWS Tracking: 
-* Through AWS linux or ubuntu.
+* Through AWS Linux or ubuntu.
 * configure your AWS credentials through AWS CLI.
 Then run this aws terminal
 * ```bash
    mlflow server -h 0.0.0.0 -p 5000 --backend-store-uri postgresql://{Master user name}:6XPj1FLSf5vVIdXnc6Pk@{END POINT}:5432/{initial database name} --default-artifact-root s3://{S3 bucket name}
    ```
-And model tracking can seen in server host.
+And model tracking can be seen in the server host.
 example: `"http://ec2-18-222-108-158.us-east-2.compute.amazonaws.com:5000"` This will vary based on each server instance.
 
 Then run the `notebook_AWS_cloud.ipynb` in a separate terminal --> Make sure you change the server host and add the necessary permission policy to S3 for saving and tracking the mlflow models.
+## 4. Workflow Orchestration:
+Prefect is used for Workflow Orchestration. Xgboost from MLflow registry model is used for this workflow orchestration and deployment. 
+The Jupyter notebook from the Mlflow model is converted into an executable Python file `prefect_orchestration.py`. 
+Python decorators like task and flow were added to monitor the workflow.
 
+Create a conda env and pip install required packages using `pip install -r requirements.txt`
+
+Run a prefect server in terminal
+
+ ```bash
+ prefect server start
+   ```
+
+Check the flow in localhost port
+ ```bash
+ localhost:8080
+   ```
+Run `python prefect_orchestration.py` in a separate terminal
+
+Initialize the prefect project
+```bash
+prefect project init
+   ```
+This will generate `prefect.yaml`, `deployment.yaml`, `.prefectignore`, 
+
+Create a workpool in a prefect UI and deploy using this command in terminal
+
+```bash
+prefect deploy <path to the model location >:main_flow -n <model_name> -p <workpool_name>
+   ```
+Then Run the worker network
+```bash
+prefect worker start
+   ```
+Before running the prefect deployment, make sure all the files are pushed in remote locations.
+
+Open the Prefect UI and find the flows. Click quick run.
+
+You can see generated data in the terminal while running the flow. You can schedule this flow with different interval in prefect UI.
