@@ -342,7 +342,8 @@ Using the `evidently_metrics_calculation_optimized.py` python file. Generate the
 
 ### 7.Best practices, testing and CI/CD:
 
-Unit testing was done using pytest and testing files are included in the best practices folder.
-The rest of the processes are still works in progress.
+Unit testing was done using pytest and testing files are included in the best practices folder. --> Use pytest to see the testing results
+There is an integration test. --> pipenv run python test_docker.py to confirm the testing
+
 
 
