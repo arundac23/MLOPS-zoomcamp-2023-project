@@ -14,7 +14,7 @@ def test_base64_decode():
     base64_input = read_text('data.b64')
 
     actual_result = model.base64_decode(base64_input)
-    expected_result = {'model': 'chicago-ride-duration-prediction-model', 'version': '1223', 'prediction': {'ride_duration': 20.928277928045613, 'ride_id': 13579}}
+    expected_result = {'ride': {'dropoff_community_area': '32', 'pickup_community_area': '6'},'ride_id': 123456}
     assert actual_result == expected_result
 
 
@@ -80,10 +80,10 @@ def test_lambda_handler():
         'predictions': [
             {
                 'model': 'chicago-ride-predictions',
-                'version': model_version,
+                'model_version': model_version,
                 'prediction': {
                     'ride_duration': 10.0,
-                    'ride_id': 256,
+                    'ride_id': 123456,
                 },
             }
         ]
