@@ -58,3 +58,35 @@ def test_predict():
     expected_prediction = 10.0
 
     assert actual_prediction == expected_prediction
+    
+def test_lambda_handler():
+    model_mock = ModelMock(10.0)
+    model_version = 'Test123'
+    model_service = model.ModelService(model_mock, model_version)
+
+    base64_input = read_text('data.b64')
+
+    event = {
+        "Records": [
+            {
+                "kinesis": {
+                    "data": base64_input,
+                },
+            }
+        ]
+    }
+    actual_predictions = model_service.lambda_handler(event)
+    expected_predictions = {
+        'predictions': [
+            {
+                'model': 'chicago-ride-predictions',
+                'version': model_version,
+                'prediction': {
+                    'ride_duration': 10.0,
+                    'ride_id': 256,
+                },
+            }
+        ]
+    }
+
+    assert actual_predictions == expected_predictions
