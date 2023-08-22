@@ -1,4 +1,4 @@
-# MLOPS-zoom camp-2023-project
+# MLOPS-zoom camp-2023-project - Chicago Taxi Ride prediction
 The final project of MLOPS Zoomcamp 2023
 
 This project involves model development, tracking, deployment, and monitoring machine learning models using MLops best practices. The following tasks are involved in the full completion of this project.
@@ -187,6 +187,142 @@ Run `python predict.py`
 Run `python test.py` in a separate terminal to see the prediction.
 
 ### Streaming Deployment:
-Deployment in a streaming context involves the real-time distribution and execution of applications or models. It is particularly relevant in scenarios where data arrives continuously and needs to be processed in a timely manner.In the realm of machine learning, stream deployment could refer to deploying machine learning models that make predictions on incoming data streams in real-time
+Deployment in a streaming context involves the real-time distribution and execution of applications or models. It is particularly relevant in scenarios where data arrives continuously and needs to be processed in a timely manner. In the realm of machine learning, stream deployment could refer to deploying machine learning models that make predictions on incoming data streams in real-time
 
 In this project, we will use kinesis to handle streaming data and lambda to process and transform the data.
+
+First set up AWS lambda function and kinesis data stream and select provisioned option in Amazon web service.
+create a role and add permission for AWSLambdaKinesisExectuionRole 
+Create a lambda function and assign the role to it. Create a data stream using Amazon Kinesis. Add kinesis as a trigger to the lambda function.
+After the trigger is enabled, then we can run this following command as test in the terminal:
+```bash
+{ "ride": { "pickup_community_area" : 6, "dropoff_community_area" : 32 }, "ride_id": 123 }
+
+KINESIS_STREAM_INPUT=chicago-ride-predictions aws kinesis put-record
+--stream-name ${KINESIS_STREAM_INPUT}
+--partition-key 1
+--data "Hello, this is a test."
+   ```
+Then check the streaming data in the cloudwatch
+
+Include this `base64.b64decode(data_encoded).decode('utf-8')` in lambda function to decode the data stream into readable format.
+
+```bash
+def lambda_handler(event, context):
+
+    
+    print(json.dumps(event))
+    
+    prediction_events = []
+    
+    for record in event['Records']:
+        encoded_data = record['kinesis']['data']
+        decoded_data = base64.b64decode(encoded_data).decode('utf-8')
+        ride_event = json.loads(decoded_data)
+        print(ride_event)
+        ride = ride_event['ride']
+        ride_id = ride_event['ride_id']
+        features=prepare_features(ride)
+        prediction = predict(features)
+        prediction_event = {
+            'model':'chicago-ride-duration-prediction-model',
+            'version': '1223',
+            'prediction' :{
+                'ride_duration': prediction,
+                'ride_id' : ride_id
+            }
+        }
+   ```
+
+As we develop further, we refine the input to the data stream
+```bash
+KINESIS_STREAM_INPUT=chicago-ride-predictions
+
+aws kinesis put-record
+--stream-name ${KINESIS_STREAM_INPUT}
+--partition-key 1
+--data '{ "ride": { "pickup_community_area": "6", "dropoff_community_area": "32" }, "ride_id": 13579 }
+   ```
+
+Record of the stream data will available in cloud watch as JSON format
+```bash
+event = {
+    "Records": [
+        {
+            "kinesis": {
+                "kinesisSchemaVersion": "1.0",
+                "partitionKey": "1",
+                "sequenceNumber": "49643747291208665319133457446498095704868846562692825090",
+                "data": "ewogICAgICAgICJyaWRlIjogewogICAgICAgICAgICAicGlja3VwX2NvbW11bml0eV9hcmVhIjogIjYiLAogICAgICAgICAgICAiZHJvcG9mZl9jb21tdW5pdHlfYXJlYSI6ICIzMiIKICAgICAgICB9LCAKICAgICAgICAicmlkZV9pZCI6IDEyMzQ1NgogICAgfQ==",
+                "approximateArrivalTimestamp": 1692503185.509
+            },
+            "eventSource": "aws:kinesis",
+            "eventVersion": "1.0",
+            "eventID": "shardId-000000000000:49643747291208665319133457446498095704868846562692825090",
+            "eventName": "aws:kinesis:record",
+            "invokeIdentityArn": "arn:aws:iam::150675264512:role/lambda-kinesis-role",
+            "awsRegion": "us-east-2",
+            "eventSourceARN": "arn:aws:kinesis:us-east-2:150675264512:stream/ride-events"
+        }
+    ]
+}
+   ```
+#### Finally reading the result from a stream:
+```bash
+KINESIS_STREAM_OUTPUT='chicago-ride-predictions' SHARD='shardId-000000000000'
+
+SHARD_ITERATOR=$(aws kinesis
+get-shard-iterator
+--shard-id ${SHARD}
+--shard-iterator-type TRIM_HORIZON
+--stream-name ${KINESIS_STREAM_OUTPUT}
+--query 'ShardIterator'
+)
+
+RESULT=$(aws kinesis get-records --shard-iterator $SHARD_ITERATOR)
+
+echo ${RESULT} | jq -r '.Records[0].Data' | base64 --decode | jq
+   ```
+
+### Run a test using `test.py` in a terminal
+```bash
+export PREDICTIONS_STREAM_NAME = 'chicago-ride-predictions' export TEST_RUN = 'True'
+
+python test.py in a separate terminal
+   ```
+build a docker container using Dockerfile and pipenv files
+```bash
+docker build -t stream-model-chicago-taxi-duration:v1 .
+   ```
+Run the docker container
+``` bash
+docker run -it --rm
+-p 8080:8080
+-e PREDICTIONS_STREAM_NAME="chicago-ride-predictions"
+-e TEST_RUN="True"
+-e AWS_ACCESS_KEY_ID="AKIAIOSFODNN7EXAMPLE"
+-e AWS_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+-e AWS_DEFAULT_REGION="us-east-2"
+stream-model-chicago-taxi-duration:v1
+   ```
+Use `test_docker.py` to check the prediction.
+
+Finally, create a repository in AWS ECR using aws cli
+
+```bash
+aws ecr create-repository --repository-name chicago-taxi-duration-model
+   ```
+```bash
+$(aws ecr get-login --no-include-email)
+   ```
+```bash
+REMOTE_URI="150675264512.dkr.ecr.us-east-2.amazonaws.com/chicago-taxi-duration-model"
+REMOTE_TAG="v1"
+REMOTE_IMAGE=${REMOTE_URI}:${REMOTE_TAG}
+
+LOCAL_IMAGE="stream-model-chicago-taxi-duration:v1"
+docker tag ${LOCAL_IMAGE} ${REMOTE_IMAGE}
+docker push ${REMOTE_IMAGE}
+   ```
+Then create a new lambda using this elastic container. Then, we create the policy for our s3 as services and include the list and read permission.
+Use the shard iterator again to specify the position to start reading the stream.
