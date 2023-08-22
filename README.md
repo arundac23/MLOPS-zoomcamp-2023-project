@@ -326,3 +326,23 @@ docker push ${REMOTE_IMAGE}
    ```
 Then create a new lambda using this elastic container. Then, we create the policy for our s3 as services and include the list and read permission.
 Use the shard iterator again to specify the position to start reading the stream.
+
+## 6. Monitoring:
+In monitoring, we will ensure the quality of the deployed model is not compromised. Tools like grafana and adminer is used to visualize and store the data to continuously monitor the model and data performance.
+Create a conda env and pip install necessary packages related to monitoring.`notebook_monitoring.ipynb`  ColumnDriftMetric(column_name='prediction'), DatasetDriftMetric() DatasetMissingValuesMetric() are reported that jupyter notebook.
+![image](https://github.com/arundac23/MLOPS-zoomcamp-2023-project/assets/76126029/698d4d71-a97d-4d81-9c7d-8a3baadce7a5)
+
+
+![image](https://github.com/arundac23/MLOPS-zoomcamp-2023-project/assets/76126029/27f27be8-504b-4da6-aec9-349469aa8714)
+
+
+Using `docker-compose.yml` and `grafana_datasources.yaml` create grafana UI and adminer database.Make sure grafana_datasources.yaml is created in config folder.
+
+Using the `evidently_metrics_calculation_optimized.py` python file. Generate the monitoring data and send it to the database. Data information can be accessed through adminer and visualized through Grafana.
+
+### 7.Best practices, testing and CI/CD:
+
+Unit testing was done using pytest and testing files are included in the best practices folder.
+The rest of the processes are still works in progress.
+
+
