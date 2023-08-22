@@ -61,8 +61,8 @@ class ModelService:
             prediction = self.predict(features)
 
             prediction_event = {
-                'model': 'ride_duration_prediction_model',
-                'version': self.model_version,
+                'model': 'chicago-ride-predictions',
+                'model_version': self.model_version,
                 'prediction': {'ride_duration': prediction, 'ride_id': ride_id},
             }
 
